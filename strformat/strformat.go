@@ -2,7 +2,7 @@ package strformat
 
 /*
 	StrFormat package
-	ver 1.0 - 2019-02-18
+	ver 1.1 - 2019-02-21
 	by Zecchan Silverlake
 
 	This package contains useful function to manipulate strings
@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/zecchan/zgolib/reflection"
 )
 
 // StringFormatter is used to format a string template, it comes with custom format.
@@ -88,6 +90,14 @@ func PadRight(str string, padChar string, totalLength int) string {
 	var cnt = totalLength - len(str)
 	if cnt > 0 {
 		str += strings.Repeat(c, cnt)
+	}
+	return str
+}
+
+// Format will formats str and replaces {index} with specified vars
+func Format(str string, vars ...interface{}) string {
+	for idx, item := range vars {
+		str = strings.Replace(str, "{"+strconv.Itoa(idx)+"}", reflection.ToString(item), -1)
 	}
 	return str
 }
