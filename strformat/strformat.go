@@ -18,7 +18,6 @@ import (
 // StringFormatter is used to format a string template, it comes with custom format.
 // Note: Call Init() before adding CustomFormat or it will panic
 type StringFormatter struct {
-	Format        string
 	CustomFormat  map[string]func(string) string
 	UseCustomTime bool
 	CustomTime    time.Time
