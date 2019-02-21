@@ -3,7 +3,7 @@ package strformat
 /*
 	StrFormat package
 	ver 1.1 - 2019-02-21
-	by Zecchan Silverlake
+	Copyright (c) 2019 - Zecchan Silverlake
 
 	This package contains useful function to manipulate strings
 */

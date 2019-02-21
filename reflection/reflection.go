@@ -1,18 +1,18 @@
 package reflection
 
+/*
+	Reflection package
+	ver 1.1 - 2019-02-21
+	Copyright (c) 2019 - Zecchan Silverlake
+
+	This package contains useful function to map values between structs
+*/
+
 import (
 	"errors"
 	"reflect"
 	"strconv"
 )
-
-/*
-	Reflection package
-	ver 1.1 - 2019-02-21
-	by Zecchan Silverlake
-
-	This package contains useful function to map values between structs
-*/
 
 func Map(from interface{}, to interface{}) error {
 	frVal, frTyp, frOK := GetType(from)
