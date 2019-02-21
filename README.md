@@ -18,7 +18,7 @@ Gets type and value of an object. Returned bool value indicates validity of the 
 ### type StringFormatter
 #### StringFormatter.CustomFormat  map[string]func(string) string
 Create a custom formatter:
-```` golang
+````go
  sf.CustomFormat["%hello%"] = func(txt string) string { 
 		return strings.Replace(txt, "%hello%", "Hello", 1) 
  }
