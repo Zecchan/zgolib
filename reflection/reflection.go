@@ -3,6 +3,7 @@ package reflection
 import (
 	"errors"
 	"reflect"
+	"strconv"
 )
 
 /*
@@ -109,4 +110,46 @@ func GetType(obj interface{}) (val reflect.Value, typ reflect.Type, ok bool) {
 	kind = oval.Kind()
 	otyp = oval.Type()
 	return oval, otyp, true
+}
+
+func ToString(value interface{}) string {
+	if value == nil {
+		return "null"
+	}
+	val, typ, ok := GetType(&value)
+
+	if !ok {
+		return "unknown{}"
+	}
+
+	var kind = val.Kind()
+	if kind == reflect.Int || kind == reflect.Int16 || kind == reflect.Int32 || kind == reflect.Int64 || kind == reflect.Int8 {
+		return strconv.FormatInt(val.Int(), 10)
+	}
+	if kind == reflect.Uint || kind == reflect.Uint16 || kind == reflect.Uint32 || kind == reflect.Uint64 || kind == reflect.Uint8 {
+		return strconv.FormatUint(val.Uint(), 10)
+	}
+	if kind == reflect.Float32 || kind == reflect.Float64 {
+		return strconv.FormatFloat(val.Float(), 'f', -1, 64)
+	}
+	if kind == reflect.String {
+		return val.String()
+	}
+	if kind == reflect.Array {
+		return "array[" + typ.Name() + "]"
+	}
+	if kind == reflect.Slice {
+		return "slice[" + typ.Name() + "]"
+	}
+	if kind == reflect.Struct {
+		return "struct{" + typ.Name() + "}"
+	}
+	if kind == reflect.Bool {
+		if val.Bool() {
+			return "true"
+		}
+		return "false"
+	}
+
+	return "object{" + typ.Name() + "}"
 }
