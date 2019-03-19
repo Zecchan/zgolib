@@ -10,6 +10,7 @@ package reflection
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"strconv"
 )
@@ -79,7 +80,7 @@ func MapSlice(from interface{}, to interface{}) error {
 	l := frVal.Len()
 	c := frVal.Cap()
 
-	newSlice := reflect.MakeSlice(frTyp, l, c)
+	newSlice := reflect.MakeSlice(toTyp, l, c)
 
 	for i := 0; i < l; i++ {
 		if frVal.Index(i).CanAddr() && newSlice.Index(i).CanAddr() {
@@ -152,4 +153,180 @@ func ToString(value interface{}) string {
 	}
 
 	return "object{" + typ.Name() + "}"
+}
+
+type GoType struct {
+	Kind reflect.Kind
+	Type reflect.Type
+}
+
+// Create creates a new instance of the current GoType initialized to specified obj. If obj is nil, zero values is returned. References are passed as is.
+func (typ *GoType) Create(obj interface{}) (interface{}, error) {
+	if typ.IsPtrToPtr() {
+		return nil, errors.New("Pointer of a pointer is not supported")
+	}
+	if obj == nil {
+		var ptrRes reflect.Value
+		if typ.Kind == reflect.Ptr {
+			ptrRes = reflect.New(typ.Type.Elem())
+		} else {
+			ptrRes = reflect.New(typ.Type)
+		}
+		return ptrRes.Elem().Interface(), nil
+	}
+	t := GetGoType(obj)
+	if t.IsPtrToPtr() {
+		return nil, errors.New("Pointer of a pointer is not supported")
+	}
+	v := reflect.ValueOf(obj)
+	if t.IsPtr() {
+		v = v.Elem()
+	}
+	var ptrRes reflect.Value
+	if typ.Kind == reflect.Ptr {
+		ptrRes = reflect.New(typ.Type.Elem())
+	} else {
+		ptrRes = reflect.New(typ.Type)
+	}
+	e := Assign(v, ptrRes)
+	if e != nil {
+		return nil, e
+	}
+	return ptrRes.Elem().Interface(), nil
+}
+
+// Instantiate is the same as Create, but it does not return an error. If an error occured, nil is returned.
+func (typ *GoType) Instantiate(obj interface{}) interface{} {
+	val, err := typ.Create(obj)
+	if err != nil {
+		return nil
+	}
+	return val
+}
+
+// IsPtr checks whether the current GoType is a pointer
+func (typ *GoType) IsPtr() bool {
+	if typ.Type == nil {
+		return false
+	}
+	return typ.Kind == reflect.Ptr
+}
+
+// IsPtrToPtr checks whether the current GoType is a pointer to pointer
+func (typ *GoType) IsPtrToPtr() bool {
+	if typ.Type == nil {
+		return false
+	}
+	if typ.Type.Kind() != reflect.Ptr {
+		return false
+	}
+	return typ.Type.Elem().Kind() == reflect.Ptr
+}
+
+// GetGoType will get a GoType of specified object
+func GetGoType(obj interface{}) *GoType {
+	typ := GoType{}
+	typ.Type = reflect.TypeOf(obj)
+	if typ.Type == nil {
+		typ.Kind = reflect.Invalid
+		return &typ
+	}
+	typ.Kind = typ.Type.Kind()
+	return &typ
+}
+
+// GoTypeOf converts reflect.Type to a GoType
+func GoTypeOf(rtype reflect.Type) *GoType {
+	typ := GoType{}
+	typ.Type = rtype
+	if typ.Type == nil {
+		typ.Kind = reflect.Invalid
+		return &typ
+	}
+	typ.Kind = rtype.Kind()
+	return &typ
+}
+
+// Assign will assigns a value to a pointer of a value
+func Assign(valFrom reflect.Value, ptrTo reflect.Value) error {
+	if valFrom.Kind() != ptrTo.Elem().Kind() {
+		return errors.New("Cannot assign a " + KindToString(valFrom.Kind()) + " to a " + KindToString(ptrTo.Elem().Kind()))
+	}
+	fmt.Println(KindToString(valFrom.Kind()) + " to a " + KindToString(ptrTo.Elem().Kind()))
+	var kind = valFrom.Kind()
+	valTo := ptrTo.Elem()
+
+	if kind == reflect.Struct {
+		toType := valTo.Type()
+		frType := valFrom.Type()
+		for i := 0; i < toType.NumField(); i++ {
+			fldName := toType.Field(i).Name
+			_, found := frType.FieldByName(fldName)
+			if found && valTo.FieldByName(fldName).CanSet() {
+				valTo.FieldByName(fldName).Set(valFrom.FieldByName(fldName))
+			}
+		}
+	}
+
+	return nil
+}
+
+// KindToString gets a string representation of reflect.Kind
+func KindToString(kind reflect.Kind) string {
+	switch kind {
+	case reflect.Array:
+		return "Array"
+	case reflect.Bool:
+		return "Bool"
+	case reflect.Chan:
+		return "Chan"
+	case reflect.Complex128:
+		return "Complex128"
+	case reflect.Complex64:
+		return "Complex64"
+	case reflect.Float32:
+		return "Float32"
+	case reflect.Float64:
+		return "Float64"
+	case reflect.Func:
+		return "Func"
+	case reflect.Int:
+		return "Int"
+	case reflect.Int16:
+		return "Int16"
+	case reflect.Int32:
+		return "Int32"
+	case reflect.Int64:
+		return "Int64"
+	case reflect.Int8:
+		return "Int8"
+	case reflect.Interface:
+		return "Interface"
+	case reflect.Map:
+		return "Map"
+	case reflect.Ptr:
+		return "Pointer"
+	case reflect.Slice:
+		return "Slice"
+	case reflect.String:
+		return "String"
+	case reflect.Struct:
+		return "Struct"
+	case reflect.Uint:
+		return "Uint"
+	case reflect.Uint16:
+		return "Uint16"
+	case reflect.Uint32:
+		return "Uint32"
+	case reflect.Uint64:
+		return "Uint64"
+	case reflect.Uint8:
+		return "Uint8"
+	case reflect.Uintptr:
+		return "Uintptr"
+	case reflect.UnsafePointer:
+		return "UnsafePointer"
+	default:
+		return "Invalid"
+	}
 }

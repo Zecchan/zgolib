@@ -2,8 +2,8 @@ package strformat
 
 /*
 	StrFormat package
-	ver 1.1 - 2019-02-21
-	Copyright (c) 2019 - Zecchan Silverlake
+	ver 1.2 - 2019-03-19
+	by Zecchan Silverlake
 
 	This package contains useful function to manipulate strings
 */
@@ -13,8 +13,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/zecchan/zgolib/reflection"
 )
 
 // StringFormatter is used to format a string template, it comes with custom format.
@@ -94,10 +92,49 @@ func PadRight(str string, padChar string, totalLength int) string {
 	return str
 }
 
-// Format will formats str and replaces {index} with specified vars
-func Format(str string, vars ...interface{}) string {
-	for idx, item := range vars {
-		str = strings.Replace(str, "{"+strconv.Itoa(idx)+"}", reflection.ToString(item), -1)
+// Filter filters out characters that is not defined in charset
+func Filter(str string, charset string) string {
+	var re string
+	for _, rn := range strings.Split(str, "") {
+		if strings.Contains(charset, rn) {
+			re += rn
+		}
 	}
-	return str
+	return re
 }
+
+// Capitalize will capitalize each word excluding a and of
+func Capitalize(str string) string {
+	if str == "" {
+		return ""
+	}
+	var spl = strings.Split(str, " ")
+	res := ""
+	for _, word := range spl {
+		if word != "" && word != "a" && word != "of" {
+			nword := strings.ToUpper(word[0:1])
+			if len(word) > 1 {
+				nword += word[1:]
+			}
+			word = nword
+		}
+		if word != "" {
+			if res != "" || word == "" {
+				res += " "
+			}
+			res += word
+		}
+	}
+	return res
+}
+
+const (
+	// CharsetNumber contains all numbers
+	CharsetNumber = "0123456789"
+	// CharsetAlphaLowercase contains lowercase alpha
+	CharsetAlphaLowercase = "abcdefghijklmnopqrstuvwxyz"
+	// CharsetAlphaUppercase contains uppercase alpha
+	CharsetAlphaUppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	// CharsetAlphaNumeric contains lowercase alpha, uppercase alpha and numbers
+	CharsetAlphaNumeric = CharsetNumber + CharsetAlphaLowercase + CharsetAlphaUppercase
+)
